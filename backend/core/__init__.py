@@ -10,6 +10,7 @@ from .security import (
     decode_token
 )
 from .logging import setup_logging
+from .network import get_available_port
 
 __all__ = [
     "settings",
@@ -24,5 +25,6 @@ __all__ = [
     "get_password_hash",
     "create_access_token",
     "decode_token",
-    "setup_logging"
+    "setup_logging",
+    "get_available_port"
 ]
