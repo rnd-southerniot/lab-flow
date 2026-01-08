@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Histopathology Report - {{ invoice_no }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        /* Letterhead placeholder - customize with your lab details */
+        .letterhead {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+        }
+
+        .letterhead h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .letterhead p {
+            font-size: 10pt;
+            margin: 2px 0;
+        }
+
+        /* Patient Details Table - matches PDF exactly */
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .patient-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            vertical-align: top;
+        }
+
+        .patient-table .label {
+            font-weight: bold;
+            width: 25%;
+        }
+
+        .patient-table .value {
+            width: 25%;
+        }
+
+        /* Clinical note */
+        .clinical-note {
+            font-style: italic;
+            margin: 15px 0;
+        }
+
+        /* Report Section */
+        .report-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14pt;
+            text-decoration: underline;
+            margin: 20px 0 15px 0;
+        }
+
+        .report-section {
+            margin-bottom: 15px;
+        }
+
+        .report-section .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .report-section .section-content {
+            margin-top: 5px;
+            text-align: justify;
+        }
+
+        /* Diagnosis - special styling */
+        .diagnosis {
+            margin-top: 20px;
+        }
+
+        .diagnosis .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .diagnosis .section-content {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Footer with signature */
+        .footer {
+            margin-top: 50px;
+            page-break-inside: avoid;
+        }
+
+        .signature-section {
+            float: right;
+            text-align: center;
+            width: 250px;
+        }
+
+        .signature-image {
+            height: 60px;
+            margin-bottom: 5px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            font-weight: bold;
+        }
+
+        .signature-designation {
+            font-size: 10pt;
+        }
+
+        /* QR Code */
+        .qr-section {
+            float: left;
+            text-align: center;
+        }
+
+        .qr-code {
+            width: 80px;
+            height: 80px;
+        }
+
+        .qr-label {
+            font-size: 8pt;
+            margin-top: 5px;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        /* Watermark for draft/preview */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100pt;
+            color: rgba(200, 200, 200, 0.3);
+            z-index: -1;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    {% if is_preview %}
+    <div class="watermark">PREVIEW</div>
+    {% endif %}
+
+    <!-- Letterhead -->
+    <div class="letterhead">
+        <h1>{{ lab_name | default('PATHOLOGY LABORATORY') }}</h1>
+        <p>{{ lab_address | default('Address Line 1, City, Country') }}</p>
+        <p>Phone: {{ lab_phone | default('+XX-XXXX-XXXXXX') }} | Email: {{ lab_email | default('lab@example.com') }}</p>
+    </div>
+
+    <!-- Patient Details Table (matches PDF exactly) -->
+    <table class="patient-table">
+        <tr>
+            <td class="label">Invoice No.</td>
+            <td class="value">{{ invoice_no }}</td>
+            <td class="label">Receive Date:</td>
+            <td class="value">{{ receive_date }}</td>
+            <td class="label">Reporting Date:</td>
+            <td class="value">{{ reporting_date }}</td>
+        </tr>
+        <tr>
+            <td class="label">Name of Patient:</td>
+            <td class="value">{{ patient_name }}</td>
+            <td class="label">Age:</td>
+            <td class="value">{{ age }} {{ age_unit }}</td>
+            <td class="label">Sex:</td>
+            <td class="value">{{ sex }}</td>
+        </tr>
+        <tr>
+            <td class="label">Consultant/Referred by:</td>
+            <td colspan="5" class="value">{{ consultant_name }}{% if consultant_designation %}, {{ consultant_designation }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="label">Name of Investigations</td>
+            <td colspan="5" class="value">{{ investigation_type }}</td>
+        </tr>
+        <tr>
+            <td class="label">Clinical information:</td>
+            <td colspan="5" class="value">{{ clinical_information | default('') }}</td>
+        </tr>
+    </table>
+
+    <!-- Clinical Note -->
+    <p class="clinical-note">Thanks for referring. For any query, please feel free to contact us at business hours.</p>
+
+    <!-- Report Title -->
+    <h2 class="report-title">{{ investigation_type }} Report</h2>
+
+    <!-- Specimen -->
+    <div class="report-section">
+        <span class="section-title">Specimen:</span>
+        <span class="section-content">{{ specimen }}</span>
+    </div>
+
+    <!-- Gross examination -->
+    <div class="report-section">
+        <p class="section-title">Gross examination:</p>
+        <p class="section-content">{{ gross_examination }}</p>
+    </div>
+
+    <!-- Microscopic examination -->
+    <div class="report-section">
+        <p class="section-title">Microscopic examination:</p>
+        <p class="section-content">{{ microscopic_examination }}</p>
+    </div>
+
+    <!-- Diagnosis -->
+    <div class="diagnosis">
+        <span class="section-title">Diagnosis:</span>
+        <span class="section-content">{{ diagnosis }}</span>
+    </div>
+
+    {% if special_stains %}
+    <div class="report-section" style="margin-top: 15px;">
+        <p class="section-title">Special Stains:</p>
+        <p class="section-content">{{ special_stains }}</p>
+    </div>
+    {% endif %}
+
+    {% if immunohistochemistry %}
+    <div class="report-section">
+        <p class="section-title">Immunohistochemistry:</p>
+        <p class="section-content">{{ immunohistochemistry }}</p>
+    </div>
+    {% endif %}
+
+    {% if comments %}
+    <div class="report-section">
+        <p class="section-title">Comments:</p>
+        <p class="section-content">{{ comments }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Footer with Signature -->
+    <div class="footer clearfix">
+        {% if qr_code_url %}
+        <div class="qr-section">
+            <img src="{{ qr_code_url }}" alt="QR Code" class="qr-code">
+            <p class="qr-label">Scan to verify</p>
+        </div>
+        {% endif %}
+
+        <div class="signature-section">
+            {% if signature_image_url %}
+            <img src="{{ signature_image_url }}" alt="Signature" class="signature-image">
+            {% else %}
+            <div style="height: 60px;"></div>
+            {% endif %}
+            <p class="signature-line">{{ doctor_name }}</p>
+            <p class="signature-designation">{{ doctor_designation }}</p>
+            <p class="signature-designation">{{ doctor_registration }}</p>
+        </div>
+    </div>
+
+</body>
+</html>

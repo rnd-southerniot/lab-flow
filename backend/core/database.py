@@ -19,6 +19,11 @@ class DatabaseType(Enum):
     USERS_IMPLEMENTATION ="users-implementation"
     END_DEVICE ="end-device"
     GATEWAY = "gateway"
+    # Histo-Cyto databases
+    HISTO_USERS = "histo-users"
+    HISTO_PATIENTS = "histo-patients"
+    HISTO_REPORTS = "histo-reports"
+    HISTO_SIGNATURES = "histo-signatures"
 
 
 
@@ -44,8 +49,19 @@ engines = {
     DatabaseType.USERS_IMPLEMENTATION: create_engine(settings.DATABASE_URL_USERS_IMPLEMENTATION, **POOL_SETTINGS),
     DatabaseType.END_DEVICE: create_engine(settings.DATABASE_URL_END_DEVICE, **POOL_SETTINGS),
     DatabaseType.GATEWAY: create_engine(settings.DATABASE_URL_GATEWAY, **POOL_SETTINGS),
-
 }
+
+# Histo-Cyto database engines (created conditionally to avoid errors when not using histo system)
+try:
+    histo_engines = {
+        DatabaseType.HISTO_USERS: create_engine(settings.DATABASE_URL_HISTO_USERS, **POOL_SETTINGS),
+        DatabaseType.HISTO_PATIENTS: create_engine(settings.DATABASE_URL_HISTO_PATIENTS, **POOL_SETTINGS),
+        DatabaseType.HISTO_REPORTS: create_engine(settings.DATABASE_URL_HISTO_REPORTS, **POOL_SETTINGS),
+        DatabaseType.HISTO_SIGNATURES: create_engine(settings.DATABASE_URL_HISTO_SIGNATURES, **POOL_SETTINGS),
+    }
+    engines.update(histo_engines)
+except Exception as e:
+    logger.warning(f"Histo-Cyto databases not configured: {e}")
 
 # Create SessionLocal classes for each database
 
@@ -57,6 +73,18 @@ SessionLocalUsersImplementation = sessionmaker(autocommit=False, autoflush=False
 SessionLocalEndDevice = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.END_DEVICE])
 SessionLocalGateway = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.GATEWAY])
 
+# Histo-Cyto SessionLocal classes (created conditionally)
+SessionLocalHistoUsers = None
+SessionLocalHistoPatients = None
+SessionLocalHistoReports = None
+SessionLocalHistoSignatures = None
+
+if DatabaseType.HISTO_USERS in engines:
+    SessionLocalHistoUsers = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.HISTO_USERS])
+    SessionLocalHistoPatients = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.HISTO_PATIENTS])
+    SessionLocalHistoReports = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.HISTO_REPORTS])
+    SessionLocalHistoSignatures = sessionmaker(autocommit=False, autoflush=False, bind=engines[DatabaseType.HISTO_SIGNATURES])
+
 
 # Create separate Base classes for each database
 
@@ -66,6 +94,12 @@ BaseClients = declarative_base()
 BaseUsersImplementation = declarative_base()
 BaseEndDevice = declarative_base()
 BaseGateway = declarative_base()
+
+# Histo-Cyto Base classes
+BaseHistoUsers = declarative_base()
+BaseHistoPatients = declarative_base()
+BaseHistoReports = declarative_base()
+BaseHistoSignatures = declarative_base()
 
 
 # Legacy aliases for backward compatibility
@@ -118,8 +152,50 @@ def get_db_end_device():
         db.close()
 
 def get_db_gateway():
-    """Get database session for orders DB"""
+    """Get database session for gateway DB"""
     db = SessionLocalGateway()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Histo-Cyto database dependency injection functions
+def get_db_histo_users():
+    """Get database session for histo users DB"""
+    if SessionLocalHistoUsers is None:
+        raise RuntimeError("Histo-Cyto databases not configured")
+    db = SessionLocalHistoUsers()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_histo_patients():
+    """Get database session for histo patients DB"""
+    if SessionLocalHistoPatients is None:
+        raise RuntimeError("Histo-Cyto databases not configured")
+    db = SessionLocalHistoPatients()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_histo_reports():
+    """Get database session for histo reports DB"""
+    if SessionLocalHistoReports is None:
+        raise RuntimeError("Histo-Cyto databases not configured")
+    db = SessionLocalHistoReports()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_histo_signatures():
+    """Get database session for histo signatures DB"""
+    if SessionLocalHistoSignatures is None:
+        raise RuntimeError("Histo-Cyto databases not configured")
+    db = SessionLocalHistoSignatures()
     try:
         yield db
     finally:
@@ -139,6 +215,15 @@ def init_db():
         (DatabaseType.END_DEVICE, BaseEndDevice, "End-device"),
         (DatabaseType.GATEWAY, BaseGateway, "Gateway"),
     ]
+
+    # Add Histo-Cyto databases if configured
+    if DatabaseType.HISTO_USERS in engines:
+        databases.extend([
+            (DatabaseType.HISTO_USERS, BaseHistoUsers, "Histo-Users"),
+            (DatabaseType.HISTO_PATIENTS, BaseHistoPatients, "Histo-Patients"),
+            (DatabaseType.HISTO_REPORTS, BaseHistoReports, "Histo-Reports"),
+            (DatabaseType.HISTO_SIGNATURES, BaseHistoSignatures, "Histo-Signatures"),
+        ])
 
     for db_type, base_class, db_name in databases:
         for attempt in range(max_retries):

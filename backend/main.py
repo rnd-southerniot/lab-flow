@@ -27,6 +27,25 @@ from modules.gateway.models.telemetry import GatewayTelemetry
 
 from modules.health import health_router
 
+# Histo-Cyto Module Imports (conditionally loaded)
+try:
+    from modules.histo_auth import histo_auth_router
+    from modules.histo_users import histo_users_router
+    from modules.histo_users.models.user import HistoUser
+    from modules.patients import patients_router
+    from modules.patients.models.patient import Patient, ReferringDoctor
+    from modules.reports import reports_router
+    from modules.reports.models.report import Report, ReportVersion, AIChatHistory
+    from modules.pdf_generator import pdf_router
+    HISTO_CYTO_ENABLED = True
+except ImportError as e:
+    HISTO_CYTO_ENABLED = False
+    histo_auth_router = None
+    histo_users_router = None
+    patients_router = None
+    reports_router = None
+    pdf_router = None
+
 # Configure logging
 logger = setup_logging()
 
@@ -100,3 +119,17 @@ app.include_router(end_device_router, prefix=f"{settings.API_V1_STR}/end_device"
 app.include_router(gateway_router, prefix=f"{settings.API_V1_STR}/gateway", tags=["gateway"])
 
 app.include_router(health_router, prefix=f"{settings.API_V1_STR}", tags=["health"])
+
+# Histo-Cyto Routes (conditionally registered)
+if HISTO_CYTO_ENABLED:
+    if histo_auth_router:
+        app.include_router(histo_auth_router, prefix=f"{settings.API_V1_STR}/histo_auth", tags=["histo_auth"])
+    if histo_users_router:
+        app.include_router(histo_users_router, prefix=f"{settings.API_V1_STR}/histo_users", tags=["histo_users"])
+    if patients_router:
+        app.include_router(patients_router, prefix=f"{settings.API_V1_STR}/patients", tags=["patients"])
+    if reports_router:
+        app.include_router(reports_router, prefix=f"{settings.API_V1_STR}/reports", tags=["reports"])
+    if pdf_router:
+        app.include_router(pdf_router, prefix=f"{settings.API_V1_STR}/pdf", tags=["pdf"])
+    logger.info("Histo-Cyto modules registered successfully")
