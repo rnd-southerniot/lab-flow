@@ -105,6 +105,7 @@ services:
       - histo_pdfs:/app/generated_pdfs
     ports:
       - "${HISTO_BACKEND_PORT:-8001}:8001"
+    command: ["gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8001"]
     environment:
       # PostgreSQL Base Settings
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
