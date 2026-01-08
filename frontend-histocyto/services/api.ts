@@ -277,8 +277,21 @@ export const pdfService = {
     return response.blob();
   },
 
-  previewReport: async (reportId: number, token: string) => {
-    return apiRequest(`/pdf/report/${reportId}/preview`, "GET", null, token);
+  getPreviewPdf: async (reportId: number, token: string) => {
+    const url = `${getBasePath()}/pdf/report/${reportId}/preview`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to generate preview PDF");
+    return response.blob();
+  },
+
+  getReportPdfUrl: (reportId: number) => {
+    return `${getBasePath()}/pdf/report/${reportId}`;
+  },
+
+  getPreviewPdfUrl: (reportId: number) => {
+    return `${getBasePath()}/pdf/report/${reportId}/preview`;
   },
 };
 

@@ -195,10 +195,14 @@ def preview_pdf_report(
             doctor_data=doctor_data,
             is_preview=True  # Add watermark
         )
-    except ImportError as e:
+    except Exception as e:
+        import traceback
+        import logging
+        logging.error(f"PDF generation error: {type(e).__name__}: {e}")
+        logging.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=f"PDF generation failed: {type(e).__name__}: {str(e)}"
         )
 
     # Return PDF inline (not as download)

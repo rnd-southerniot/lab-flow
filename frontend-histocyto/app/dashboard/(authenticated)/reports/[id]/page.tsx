@@ -29,6 +29,8 @@ import {
   Download,
   FileEdit,
   History,
+  Printer,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -211,6 +213,37 @@ export default function ReportDetailPage() {
     }
   };
 
+  const handlePreviewPdf = async () => {
+    if (!token) return;
+    try {
+      const blob = await pdfService.getPreviewPdf(reportId, token);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (error) {
+      alert("Failed to generate preview PDF");
+    }
+  };
+
+  const handlePrintPdf = async () => {
+    if (!token) return;
+    try {
+      // For signed/published reports, use the final PDF
+      const canPrintFinal = report?.status === "signed" || report?.status === "published";
+      const blob = canPrintFinal
+        ? await pdfService.getReportPdf(reportId, token)
+        : await pdfService.getPreviewPdf(reportId, token);
+      const url = window.URL.createObjectURL(blob);
+      const printWindow = window.open(url, "_blank");
+      if (printWindow) {
+        printWindow.addEventListener("load", () => {
+          printWindow.print();
+        });
+      }
+    } catch (error) {
+      alert("Failed to generate PDF for printing");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "published":
@@ -256,7 +289,6 @@ export default function ReportDetailPage() {
   const canSign = isDoctor && report.status === "verified";
   const canPublish = report.status === "signed";
   const canAmend = report.status === "published";
-  const canDownload = report.status === "published";
 
   return (
     <div className="space-y-6">
@@ -332,11 +364,23 @@ export default function ReportDetailPage() {
               </Button>
             )}
 
-            {canDownload && (
-              <Button variant="outline" onClick={handleDownloadPdf}>
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
+            {/* PDF Actions - always show preview, print/download for signed/published */}
+            <Button variant="outline" onClick={handlePreviewPdf}>
+              <Eye className="h-4 w-4 mr-2" />
+              Preview PDF
+            </Button>
+
+            {(report.status === "signed" || report.status === "published") && (
+              <>
+                <Button variant="outline" onClick={handlePrintPdf}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+                <Button variant="outline" onClick={handleDownloadPdf}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </>
             )}
 
             {canAmend && (

@@ -1,6 +1,6 @@
 """
 PDF Generation Service
-Uses WeasyPrint to generate PDF from HTML template
+Uses xhtml2pdf to generate PDF from HTML template (Windows compatible)
 """
 import os
 from pathlib import Path
@@ -146,16 +146,27 @@ def render_report_html(
 
 
 def generate_pdf(html_content: str) -> bytes:
-    """Generate PDF from HTML content using WeasyPrint"""
+    """Generate PDF from HTML content using xhtml2pdf (Windows compatible)"""
     try:
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content).write_pdf()
-        return pdf_bytes
+        from xhtml2pdf import pisa
+
+        result = BytesIO()
+        # Convert HTML to PDF
+        pdf_status = pisa.CreatePDF(
+            src=html_content,
+            dest=result,
+            encoding='utf-8'
+        )
+
+        if pdf_status.err:
+            raise Exception(f"PDF generation failed with {pdf_status.err} errors")
+
+        result.seek(0)
+        return result.read()
     except ImportError:
-        # Fallback: return HTML as bytes if WeasyPrint not installed
         raise ImportError(
-            "WeasyPrint is not installed. "
-            "Install it with: pip install weasyprint"
+            "xhtml2pdf is not installed. "
+            "Install it with: pip install xhtml2pdf"
         )
 
 

@@ -16,8 +16,6 @@ services:
       POSTGRES_DB: histo_users
     volumes:
       - histo_users_data:/var/lib/postgresql/data
-    ports:
-      - "${HISTO_USERS_DB_PORT:-5450}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d histo_users"]
       interval: 10s
@@ -37,8 +35,6 @@ services:
       POSTGRES_DB: histo_patients
     volumes:
       - histo_patients_data:/var/lib/postgresql/data
-    ports:
-      - "${HISTO_PATIENTS_DB_PORT:-5451}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d histo_patients"]
       interval: 10s
@@ -58,8 +54,6 @@ services:
       POSTGRES_DB: histo_reports
     volumes:
       - histo_reports_data:/var/lib/postgresql/data
-    ports:
-      - "${HISTO_REPORTS_DB_PORT:-5452}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d histo_reports"]
       interval: 10s
@@ -79,8 +73,6 @@ services:
       POSTGRES_DB: histo_signatures
     volumes:
       - histo_signatures_data:/var/lib/postgresql/data
-    ports:
-      - "${HISTO_SIGNATURES_DB_PORT:-5453}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d histo_signatures"]
       interval: 10s
@@ -100,12 +92,10 @@ services:
     container_name: histo_backend
     restart: unless-stopped
     volumes:
-      - ./backend:/app
       - histo_uploads:/app/uploads
       - histo_pdfs:/app/generated_pdfs
     ports:
       - "${HISTO_BACKEND_PORT:-8001}:8001"
-    command: ["gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8001"]
     environment:
       # PostgreSQL Base Settings
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -124,6 +114,20 @@ services:
       - POSTGRES_DB_HISTO_REPORTS=histo_reports
       - POSTGRES_DB_HISTO_SIGNATURES=histo_signatures
 
+      # Dummy database hosts (required by config, not used in histo system)
+      - POSTGRES_HOST_USERS=db-histo-users
+      - POSTGRES_HOST_ORDERS=db-histo-users
+      - POSTGRES_HOST_CLIENTS=db-histo-users
+      - POSTGRES_HOST_USERS_IMPLEMENTATION=db-histo-users
+      - POSTGRES_HOST_END_DEVICE=db-histo-users
+      - POSTGRES_HOST_GATEWAY=db-histo-users
+      - POSTGRES_DB_USERS=histo_users
+      - POSTGRES_DB_ORDERS=histo_users
+      - POSTGRES_DB_CLIENTS=histo_users
+      - POSTGRES_DB_USERS_IMPLEMENTATION=histo_users
+      - POSTGRES_DB_END_DEVICE=histo_users
+      - POSTGRES_DB_GATEWAY=histo_users
+
       # Security & JWT
       - SECRET_KEY=${SECRET_KEY:-histo-cyto-secret-key-change-in-production}
       - ALGORITHM=${ALGORITHM:-HS256}
@@ -136,12 +140,9 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
 
       # App Settings
-      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
       - PROJECT_NAME=HistoCyto Lab System
       - API_VERSION=v1
-
-      # Server Port
-      - HISTO_SERVER_PORT=8001
     depends_on:
       db-histo-users:
         condition: service_healthy
@@ -168,15 +169,15 @@ services:
     build:
       context: ./frontend-histocyto
       dockerfile: Dockerfile
+      args:
+        - BACKEND_URL=http://histo-backend:8001
     container_name: histo_frontend
     restart: unless-stopped
     ports:
-      - "${HISTO_FRONTEND_PORT:-3001}:3000"
+      - "${HISTO_FRONTEND_PORT:-3000}:3000"
     environment:
       - BACKEND_URL=http://histo-backend:8001
-      - API_URL=http://histo-backend:8001
-      - NEXT_PUBLIC_USER_COOKIE=${NEXT_PUBLIC_USER_COOKIE:-histo_auth_token}
-      - PORT=3000
+      - NODE_ENV=production
     depends_on:
       - histo-backend
     networks:

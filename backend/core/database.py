@@ -26,38 +26,42 @@ class DatabaseType(Enum):
     HISTO_SIGNATURES = "histo-signatures"
 
 
+def create_db_engine(url: str):
+    """Create database engine with appropriate settings based on URL type"""
+    if url.startswith("sqlite"):
+        # SQLite doesn't support connection pooling the same way
+        return create_engine(url, connect_args={"check_same_thread": False})
+    else:
+        # PostgreSQL with connection pooling
+        pool_settings = {
+            "pool_pre_ping": True,
+            "pool_size": 25,
+            "max_overflow": 25,
+            "pool_recycle": 1800,
+            "pool_timeout": 60,
+            "echo_pool": False,
+            "pool_use_lifo": True,
+        }
+        return create_engine(url, **pool_settings)
 
-# Connection pool settings (optimized for multi-database setup)
-# Reduced per-database pool size since we have 5 databases
-POOL_SETTINGS = {
-    "pool_pre_ping": True,
-    "pool_size": 25,
-    "max_overflow": 25,
-    "pool_recycle": 1800,
-    "pool_timeout": 60,
-    "echo_pool": False,
-    "pool_use_lifo": True,
-}
 
 # Create engines for each database
 engines = {
-
-    DatabaseType.USERS: create_engine(settings.DATABASE_URL_USERS, **POOL_SETTINGS),
-    DatabaseType.ORDERS: create_engine(settings.DATABASE_URL_ORDERS, **POOL_SETTINGS),
-    DatabaseType.CLIENTS: create_engine(settings.DATABASE_URL_CLIENTS, **POOL_SETTINGS),
-
-    DatabaseType.USERS_IMPLEMENTATION: create_engine(settings.DATABASE_URL_USERS_IMPLEMENTATION, **POOL_SETTINGS),
-    DatabaseType.END_DEVICE: create_engine(settings.DATABASE_URL_END_DEVICE, **POOL_SETTINGS),
-    DatabaseType.GATEWAY: create_engine(settings.DATABASE_URL_GATEWAY, **POOL_SETTINGS),
+    DatabaseType.USERS: create_db_engine(settings.DATABASE_URL_USERS),
+    DatabaseType.ORDERS: create_db_engine(settings.DATABASE_URL_ORDERS),
+    DatabaseType.CLIENTS: create_db_engine(settings.DATABASE_URL_CLIENTS),
+    DatabaseType.USERS_IMPLEMENTATION: create_db_engine(settings.DATABASE_URL_USERS_IMPLEMENTATION),
+    DatabaseType.END_DEVICE: create_db_engine(settings.DATABASE_URL_END_DEVICE),
+    DatabaseType.GATEWAY: create_db_engine(settings.DATABASE_URL_GATEWAY),
 }
 
 # Histo-Cyto database engines (created conditionally to avoid errors when not using histo system)
 try:
     histo_engines = {
-        DatabaseType.HISTO_USERS: create_engine(settings.DATABASE_URL_HISTO_USERS, **POOL_SETTINGS),
-        DatabaseType.HISTO_PATIENTS: create_engine(settings.DATABASE_URL_HISTO_PATIENTS, **POOL_SETTINGS),
-        DatabaseType.HISTO_REPORTS: create_engine(settings.DATABASE_URL_HISTO_REPORTS, **POOL_SETTINGS),
-        DatabaseType.HISTO_SIGNATURES: create_engine(settings.DATABASE_URL_HISTO_SIGNATURES, **POOL_SETTINGS),
+        DatabaseType.HISTO_USERS: create_db_engine(settings.DATABASE_URL_HISTO_USERS),
+        DatabaseType.HISTO_PATIENTS: create_db_engine(settings.DATABASE_URL_HISTO_PATIENTS),
+        DatabaseType.HISTO_REPORTS: create_db_engine(settings.DATABASE_URL_HISTO_REPORTS),
+        DatabaseType.HISTO_SIGNATURES: create_db_engine(settings.DATABASE_URL_HISTO_SIGNATURES),
     }
     engines.update(histo_engines)
 except Exception as e:

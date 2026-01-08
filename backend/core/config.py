@@ -1,8 +1,11 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 
 class Settings(BaseSettings):
+    # Use SQLite for local development (set USE_SQLITE=true in environment)
+    USE_SQLITE: bool = False
     PROJECT_NAME: str = "Southern IOT System"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -84,19 +87,39 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Build database URLs for each database
-        self.DATABASE_URL_USERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_USERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_USERS}"
-        self.DATABASE_URL_ORDERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_ORDERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_ORDERS}"
-        self.DATABASE_URL_CLIENTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_CLIENTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_CLIENTS}"
-        self.DATABASE_URL_USERS_IMPLEMENTATION = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_USERS_IMPLEMENTATION}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_USERS_IMPLEMENTATION}"
-        self.DATABASE_URL_END_DEVICE = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_END_DEVICE}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_END_DEVICE}"
-        self.DATABASE_URL_GATEWAY = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_GATEWAY}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_GATEWAY}"
 
-        # Histo-Cyto Database URLs
-        self.DATABASE_URL_HISTO_USERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_USERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_USERS}"
-        self.DATABASE_URL_HISTO_PATIENTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_PATIENTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_PATIENTS}"
-        self.DATABASE_URL_HISTO_REPORTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_REPORTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_REPORTS}"
-        self.DATABASE_URL_HISTO_SIGNATURES = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_SIGNATURES}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_SIGNATURES}"
+        # Create data directory for SQLite databases
+        data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+        os.makedirs(data_dir, exist_ok=True)
+
+        if self.USE_SQLITE:
+            # Use SQLite for local development (Histo-Cyto only)
+            self.DATABASE_URL_HISTO_USERS = f"sqlite:///{data_dir}/histo_users.db"
+            self.DATABASE_URL_HISTO_PATIENTS = f"sqlite:///{data_dir}/histo_patients.db"
+            self.DATABASE_URL_HISTO_REPORTS = f"sqlite:///{data_dir}/histo_reports.db"
+            self.DATABASE_URL_HISTO_SIGNATURES = f"sqlite:///{data_dir}/histo_signatures.db"
+
+            # Dummy URLs for other databases (won't be used in histo-only mode)
+            self.DATABASE_URL_USERS = f"sqlite:///{data_dir}/dummy_users.db"
+            self.DATABASE_URL_ORDERS = f"sqlite:///{data_dir}/dummy_orders.db"
+            self.DATABASE_URL_CLIENTS = f"sqlite:///{data_dir}/dummy_clients.db"
+            self.DATABASE_URL_USERS_IMPLEMENTATION = f"sqlite:///{data_dir}/dummy_users_impl.db"
+            self.DATABASE_URL_END_DEVICE = f"sqlite:///{data_dir}/dummy_end_device.db"
+            self.DATABASE_URL_GATEWAY = f"sqlite:///{data_dir}/dummy_gateway.db"
+        else:
+            # Build PostgreSQL database URLs for each database
+            self.DATABASE_URL_USERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_USERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_USERS}"
+            self.DATABASE_URL_ORDERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_ORDERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_ORDERS}"
+            self.DATABASE_URL_CLIENTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_CLIENTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_CLIENTS}"
+            self.DATABASE_URL_USERS_IMPLEMENTATION = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_USERS_IMPLEMENTATION}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_USERS_IMPLEMENTATION}"
+            self.DATABASE_URL_END_DEVICE = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_END_DEVICE}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_END_DEVICE}"
+            self.DATABASE_URL_GATEWAY = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_GATEWAY}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_GATEWAY}"
+
+            # Histo-Cyto PostgreSQL Database URLs
+            self.DATABASE_URL_HISTO_USERS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_USERS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_USERS}"
+            self.DATABASE_URL_HISTO_PATIENTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_PATIENTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_PATIENTS}"
+            self.DATABASE_URL_HISTO_REPORTS = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_REPORTS}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_REPORTS}"
+            self.DATABASE_URL_HISTO_SIGNATURES = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST_HISTO_SIGNATURES}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_HISTO_SIGNATURES}"
 
 
 settings = Settings()
