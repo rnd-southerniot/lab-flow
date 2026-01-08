@@ -232,6 +232,338 @@ Create docker-compose.histo.yml with:
 10. Role-based access control
 11. JWT token in HTTP-only cookies
 12. API proxy through Next.js to avoid CORS
+13. AI Assistant for report writing (OpenAI GPT-4)
+14. Voice-to-text dictation (Web Speech API)
+
+## AI Assistant Feature
+
+Implement an AI-powered assistant panel in the report editor:
+
+### Backend - AI Module
+
+Create `modules/ai_assistant/` with:
+
+```python
+# routes/ai.py
+@router.post("/chat")
+async def chat_with_ai(request: ChatRequest, db: Session):
+    """General chat with AI about the report"""
+
+@router.post("/suggest/gross")
+async def suggest_gross_examination(request: SuggestionRequest):
+    """AI suggests gross examination text based on specimen"""
+
+@router.post("/suggest/microscopic")
+async def suggest_microscopic(request: SuggestionRequest):
+    """AI suggests microscopic examination based on gross findings"""
+
+@router.post("/suggest/diagnosis")
+async def suggest_diagnosis(request: SuggestionRequest):
+    """AI suggests diagnosis based on all findings"""
+
+# services/ai_service.py
+class AIService:
+    def __init__(self):
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    async def chat(self, messages: list, context: dict) -> str:
+        system_prompt = """You are a pathology assistant helping doctors write
+        histopathology and cytopathology reports. Provide accurate, professional
+        medical terminology. Always clarify that suggestions should be verified
+        by the pathologist."""
+
+        response = await self.client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "system", "content": system_prompt}] + messages,
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+
+    async def suggest_text(self, field: str, context: dict) -> str:
+        prompts = {
+            "gross": f"Based on specimen: {context['specimen']}, suggest gross examination findings.",
+            "microscopic": f"Based on gross findings: {context['gross']}, suggest microscopic examination.",
+            "diagnosis": f"Based on findings: {context['microscopic']}, suggest diagnosis."
+        }
+        return await self.chat([{"role": "user", "content": prompts[field]}], context)
+```
+
+### Frontend - AI Chat Panel
+
+Create `components/ai/ai-chat-panel.tsx`:
+
+```tsx
+interface AIChatPanelProps {
+  reportId: number;
+  reportData: ReportData;
+  onSuggestionApply: (field: string, text: string) => void;
+}
+
+export function AIChatPanel({ reportId, reportData, onSuggestionApply }: AIChatPanelProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const sendMessage = async () => {
+    // Add user message to chat
+    // Call /api/v1/ai/chat endpoint
+    // Display AI response
+    // Store in ai_chat_history table
+  };
+
+  const getSuggestion = async (field: "gross" | "microscopic" | "diagnosis") => {
+    // Call appropriate suggestion endpoint
+    // Show suggestion in chat
+    // Offer "Apply" button to insert into report field
+  };
+
+  return (
+    <Card className="h-full flex flex-col">
+      <CardHeader>
+        <CardTitle>AI Assistant</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-auto">
+        {/* Chat messages */}
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role === "user" ? "text-right" : "text-left"}>
+            <p>{msg.content}</p>
+            {msg.suggestion && (
+              <Button onClick={() => onSuggestionApply(msg.field, msg.content)}>
+                Apply to {msg.field}
+              </Button>
+            )}
+          </div>
+        ))}
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        {/* Quick suggestion buttons */}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => getSuggestion("gross")}>
+            Suggest Gross
+          </Button>
+          <Button variant="outline" onClick={() => getSuggestion("microscopic")}>
+            Suggest Microscopic
+          </Button>
+          <Button variant="outline" onClick={() => getSuggestion("diagnosis")}>
+            Suggest Diagnosis
+          </Button>
+        </div>
+        {/* Chat input */}
+        <div className="flex gap-2 w-full">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask AI assistant..."
+          />
+          <Button onClick={sendMessage}>Send</Button>
+        </div>
+      </CardFooter>
+    </Card>
+  );
+}
+```
+
+### API Endpoints for AI
+
+Add to API documentation:
+- POST /api/v1/ai/chat - General chat with context
+- POST /api/v1/ai/suggest/gross - Suggest gross examination
+- POST /api/v1/ai/suggest/microscopic - Suggest microscopic findings
+- POST /api/v1/ai/suggest/diagnosis - Suggest diagnosis
+- GET /api/v1/ai/history/{report_id} - Get chat history for report
+
+## Voice-to-Text Feature
+
+Implement browser-based voice dictation using Web Speech API:
+
+### Frontend - Voice Input Component
+
+Create `components/voice/voice-input.tsx`:
+
+```tsx
+interface VoiceInputProps {
+  onTranscript: (text: string) => void;
+  language?: string;
+}
+
+export function VoiceInput({ onTranscript, language = "en-US" }: VoiceInputProps) {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = language;
+
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript;
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+
+        setTranscript(interimTranscript);
+        if (finalTranscript) {
+          onTranscript(finalTranscript);
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, [language, onTranscript]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition not supported in this browser");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant={isListening ? "destructive" : "outline"}
+        size="icon"
+        onClick={toggleListening}
+        title={isListening ? "Stop dictation" : "Start dictation"}
+      >
+        {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+      </Button>
+      {isListening && (
+        <span className="text-sm text-muted-foreground animate-pulse">
+          Listening... {transcript}
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+### Integrate Voice Input in Report Editor
+
+Update report form fields to include voice input:
+
+```tsx
+// In report editor page
+const [grossExamination, setGrossExamination] = useState("");
+
+const handleVoiceInput = (field: string) => (text: string) => {
+  switch (field) {
+    case "gross":
+      setGrossExamination((prev) => prev + " " + text);
+      break;
+    case "microscopic":
+      setMicroscopicExamination((prev) => prev + " " + text);
+      break;
+    case "diagnosis":
+      setDiagnosis((prev) => prev + " " + text);
+      break;
+  }
+};
+
+return (
+  <div className="space-y-4">
+    {/* Gross Examination Field */}
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <Label>Gross Examination</Label>
+        <VoiceInput onTranscript={handleVoiceInput("gross")} />
+      </div>
+      <Textarea
+        value={grossExamination}
+        onChange={(e) => setGrossExamination(e.target.value)}
+        rows={6}
+        placeholder="Dictate or type gross examination findings..."
+      />
+    </div>
+
+    {/* Microscopic Examination Field */}
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <Label>Microscopic Examination</Label>
+        <VoiceInput onTranscript={handleVoiceInput("microscopic")} />
+      </div>
+      <Textarea
+        value={microscopicExamination}
+        onChange={(e) => setMicroscopicExamination(e.target.value)}
+        rows={6}
+      />
+    </div>
+
+    {/* Similar for diagnosis and other fields */}
+  </div>
+);
+```
+
+### Voice Commands (Optional Enhancement)
+
+Add voice command recognition for common actions:
+
+```tsx
+const processVoiceCommand = (text: string) => {
+  const lowerText = text.toLowerCase().trim();
+
+  // Command patterns
+  if (lowerText.startsWith("suggest gross")) {
+    getSuggestion("gross");
+  } else if (lowerText.startsWith("suggest microscopic")) {
+    getSuggestion("microscopic");
+  } else if (lowerText.startsWith("suggest diagnosis")) {
+    getSuggestion("diagnosis");
+  } else if (lowerText === "save report") {
+    handleSave();
+  } else if (lowerText === "submit report") {
+    handleSubmit();
+  } else {
+    // Regular dictation - append to current field
+    appendToCurrentField(text);
+  }
+};
+```
+
+### Browser Compatibility Note
+
+Add a compatibility check and fallback message:
+
+```tsx
+const isSpeechRecognitionSupported = () => {
+  return typeof window !== "undefined" &&
+    ("webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+};
+
+// Show warning if not supported
+{!isSpeechRecognitionSupported() && (
+  <Alert variant="warning">
+    Voice dictation is not supported in this browser.
+    Please use Chrome, Edge, or Safari for voice features.
+  </Alert>
+)}
+```
 
 ## Default Admin User
 
@@ -272,7 +604,7 @@ Start by setting up the backend with the multi-database architecture, then creat
 ```
 Build a Lab Report Management System:
 
-Tech: FastAPI + Next.js 15 + PostgreSQL + Docker
+Tech: FastAPI + Next.js 15 + PostgreSQL + Docker + OpenAI GPT-4
 
 Features:
 1. Multi-database: users, patients, reports, signatures
@@ -280,9 +612,24 @@ Features:
 3. Report workflow: Draft → Pending → Verified → Signed → Published
 4. PDF generation with xhtml2pdf, QR codes, watermarks
 5. JWT auth with role-based access
+6. AI Assistant: GPT-4 powered suggestions for gross, microscopic, diagnosis fields
+7. Voice-to-Text: Browser Web Speech API for dictating report content
 
-Backend modules: histo_auth, histo_users, patients, reports, pdf_generator
+Backend modules: histo_auth, histo_users, patients, reports, pdf_generator, ai_assistant
 Frontend pages: login, dashboard, patients (list/new/detail/verification), reports (list/new/detail/pending), users
+Frontend components: ai-chat-panel, voice-input
+
+AI Features:
+- Chat panel in report editor for asking questions
+- "Suggest Gross/Microscopic/Diagnosis" buttons
+- Apply AI suggestions directly to form fields
+- Chat history stored per report
+
+Voice Features:
+- Mic button on each text field
+- Real-time transcription
+- Voice commands: "suggest gross", "save report", "submit report"
+- Browser compatibility: Chrome, Edge, Safari
 
 Docker: 4 PostgreSQL DBs + backend (8001) + frontend (3000)
 
