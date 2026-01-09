@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL = process.env.BACKEND_URL || "http://histo-backend:8001";
 
 async function proxyRequest(request: NextRequest, path: string) {
-  const url = `${BACKEND_URL}/api/v1/${path}`;
+  // Preserve query string
+  const searchParams = request.nextUrl.searchParams.toString();
+  const queryString = searchParams ? `?${searchParams}` : "";
+  const url = `${BACKEND_URL}/api/v1/${path}${queryString}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -18,6 +21,7 @@ async function proxyRequest(request: NextRequest, path: string) {
   const fetchOptions: RequestInit = {
     method: request.method,
     headers,
+    redirect: "follow", // Follow redirects server-side
   };
 
   // Forward body for POST/PUT/PATCH requests
