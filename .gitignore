@@ -65,3 +65,4 @@ backend/data/
 coverage/
 .nyc_output/
 htmlcov/
+.env.histo
