@@ -4,20 +4,20 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
 
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || "http://histo-backend:8001";
-
-    return {
-      beforeFiles: [
-        {
-          source: "/api/proxy/:path*",
-          destination: `${backendUrl}/api/v1/:path*`,
-        },
-      ],
-      afterFiles: [],
-      fallback: [],
-    };
-  },
+  // Rewrites disabled - using API route handler instead for proper HTTPS support
+  // async rewrites() {
+  //   const backendUrl = process.env.BACKEND_URL || "http://histo-backend:8001";
+  //   return {
+  //     beforeFiles: [
+  //       {
+  //         source: "/api/proxy/:path*",
+  //         destination: `${backendUrl}/api/v1/:path*`,
+  //       },
+  //     ],
+  //     afterFiles: [],
+  //     fallback: [],
+  //   };
+  // },
 
   async headers() {
     return [
