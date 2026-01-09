@@ -211,16 +211,9 @@ def init_db():
     max_retries = 5
     retry_interval = 5
 
-    databases = [
-        (DatabaseType.USERS, BaseUsers, "Users"),
-        (DatabaseType.CLIENTS, BaseClients, "Clients"),
-        (DatabaseType.ORDERS, BaseOrders, "Orders"),
-        (DatabaseType.USERS_IMPLEMENTATION, BaseUsersImplementation, "Users_implementation"),
-        (DatabaseType.END_DEVICE, BaseEndDevice, "End-device"),
-        (DatabaseType.GATEWAY, BaseGateway, "Gateway"),
-    ]
+    databases = []
 
-    # Add Histo-Cyto databases if configured
+    # Add Histo-Cyto databases FIRST if configured (important for shared database scenarios)
     if DatabaseType.HISTO_USERS in engines:
         databases.extend([
             (DatabaseType.HISTO_USERS, BaseHistoUsers, "Histo-Users"),
@@ -228,6 +221,16 @@ def init_db():
             (DatabaseType.HISTO_REPORTS, BaseHistoReports, "Histo-Reports"),
             (DatabaseType.HISTO_SIGNATURES, BaseHistoSignatures, "Histo-Signatures"),
         ])
+
+    # Add other databases after Histo databases
+    databases.extend([
+        (DatabaseType.USERS, BaseUsers, "Users"),
+        (DatabaseType.CLIENTS, BaseClients, "Clients"),
+        (DatabaseType.ORDERS, BaseOrders, "Orders"),
+        (DatabaseType.USERS_IMPLEMENTATION, BaseUsersImplementation, "Users_implementation"),
+        (DatabaseType.END_DEVICE, BaseEndDevice, "End-device"),
+        (DatabaseType.GATEWAY, BaseGateway, "Gateway"),
+    ])
 
     for db_type, base_class, db_name in databases:
         for attempt in range(max_retries):

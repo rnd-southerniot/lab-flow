@@ -99,6 +99,35 @@ async def startup_event():
         db.close()
         db_implement.close()
 
+    # Initialize Histo-Cyto admin user
+    if HISTO_CYTO_ENABLED:
+        from core.database import SessionLocalHistoUsers
+        from core.security import get_password_hash
+        db_histo = SessionLocalHistoUsers()
+        try:
+            existing = db_histo.query(HistoUser).filter(HistoUser.username == "admin").first()
+            if not existing:
+                logger.info("Creating admin user for Histo-Cyto system...")
+                admin = HistoUser(
+                    email="admin@histocyto.com",
+                    username="admin",
+                    hashed_password=get_password_hash("admin"),
+                    full_name="System Administrator",
+                    role="admin",
+                    is_active=True,
+                    is_superuser=True
+                )
+                db_histo.add(admin)
+                db_histo.commit()
+                logger.info("Histo-Cyto admin user created successfully!")
+            else:
+                logger.info("Histo-Cyto admin user already exists")
+        except Exception as e:
+            logger.error(f"Error creating Histo-Cyto admin user: {e}")
+            db_histo.rollback()
+        finally:
+            db_histo.close()
+
 @app.get("/")
 async def root():
     return {
