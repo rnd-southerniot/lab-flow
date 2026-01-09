@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 2cm 1.5cm;
+            margin: 1.5cm 1.5cm 1cm 1.5cm;
         }
 
         * {
@@ -17,69 +17,76 @@
 
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 12pt;
-            line-height: 1.4;
+            font-size: 11pt;
+            line-height: 1.3;
             color: #000;
         }
 
-        /* Letterhead placeholder - customize with your lab details */
+        /* Letterhead */
         .letterhead {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #000;
         }
 
         .letterhead h1 {
-            font-size: 18pt;
+            font-size: 16pt;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .letterhead p {
-            font-size: 10pt;
-            margin: 2px 0;
+            font-size: 9pt;
+            margin: 1px 0;
         }
 
-        /* Patient Details Table - matches PDF exactly */
+        /* Patient Details Table - Compact Layout */
         .patient-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
+            font-size: 10pt;
         }
 
         .patient-table td {
             border: 1px solid #000;
-            padding: 8px 10px;
-            vertical-align: top;
+            padding: 4px 6px;
+            vertical-align: middle;
         }
 
         .patient-table .label {
             font-weight: bold;
-            width: 25%;
+            background-color: #f5f5f5;
+            width: 18%;
         }
 
         .patient-table .value {
-            width: 25%;
+            width: 15%;
+        }
+
+        .patient-table .wide-value {
+            width: auto;
         }
 
         /* Clinical note */
         .clinical-note {
             font-style: italic;
-            margin: 15px 0;
+            font-size: 9pt;
+            margin: 8px 0;
         }
 
         /* Report Section */
         .report-title {
             text-align: center;
             font-weight: bold;
-            font-size: 14pt;
+            font-size: 12pt;
             text-decoration: underline;
-            margin: 20px 0 15px 0;
+            margin: 10px 0 8px 0;
         }
 
         .report-section {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
         .report-section .section-title {
@@ -88,13 +95,13 @@
         }
 
         .report-section .section-content {
-            margin-top: 5px;
+            margin-top: 2px;
             text-align: justify;
         }
 
-        /* Diagnosis - special styling */
+        /* Diagnosis */
         .diagnosis {
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .diagnosis .section-title {
@@ -104,34 +111,35 @@
 
         .diagnosis .section-content {
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 2px;
         }
 
         /* Footer with signature */
         .footer {
-            margin-top: 50px;
+            margin-top: 20px;
             page-break-inside: avoid;
         }
 
         .signature-section {
             float: right;
             text-align: center;
-            width: 250px;
+            width: 220px;
         }
 
         .signature-image {
-            height: 60px;
-            margin-bottom: 5px;
+            height: 50px;
+            margin-bottom: 3px;
         }
 
         .signature-line {
             border-top: 1px solid #000;
-            padding-top: 5px;
+            padding-top: 3px;
             font-weight: bold;
+            font-size: 10pt;
         }
 
         .signature-designation {
-            font-size: 10pt;
+            font-size: 9pt;
         }
 
         /* QR Code */
@@ -141,13 +149,13 @@
         }
 
         .qr-code {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
         }
 
         .qr-label {
-            font-size: 8pt;
-            margin-top: 5px;
+            font-size: 7pt;
+            margin-top: 2px;
         }
 
         .clearfix::after {
@@ -155,25 +163,9 @@
             clear: both;
             display: table;
         }
-
-        /* Watermark for draft/preview */
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 100pt;
-            color: rgba(200, 200, 200, 0.3);
-            z-index: -1;
-            white-space: nowrap;
-        }
     </style>
 </head>
 <body>
-    {% if is_preview %}
-    <div class="watermark">PREVIEW</div>
-    {% endif %}
-
     <!-- Letterhead -->
     <div class="letterhead">
         <h1>{{ lab_name | default('PATHOLOGY LABORATORY') }}</h1>
@@ -181,35 +173,33 @@
         <p>Phone: {{ lab_phone | default('+XX-XXXX-XXXXXX') }} | Email: {{ lab_email | default('lab@example.com') }}</p>
     </div>
 
-    <!-- Patient Details Table (matches PDF exactly) -->
+    <!-- Patient Details Table - Compact 3-column layout -->
     <table class="patient-table">
         <tr>
             <td class="label">Invoice No.</td>
             <td class="value">{{ invoice_no }}</td>
-            <td class="label">Receive Date:</td>
+            <td class="label">Receive Date</td>
             <td class="value">{{ receive_date }}</td>
-            <td class="label">Reporting Date:</td>
-            <td class="value">{{ reporting_date }}</td>
+            <td class="label">Reporting Date</td>
+            <td class="value">{{ reporting_date | default('') }}</td>
         </tr>
         <tr>
-            <td class="label">Name of Patient:</td>
+            <td class="label">Patient Name</td>
             <td class="value">{{ patient_name }}</td>
-            <td class="label">Age:</td>
+            <td class="label">Age</td>
             <td class="value">{{ age }} {{ age_unit }}</td>
-            <td class="label">Sex:</td>
+            <td class="label">Sex</td>
             <td class="value">{{ sex }}</td>
         </tr>
         <tr>
-            <td class="label">Consultant/Referred by:</td>
-            <td colspan="5" class="value">{{ consultant_name }}{% if consultant_designation %}, {{ consultant_designation }}{% endif %}</td>
+            <td class="label">Referred by</td>
+            <td colspan="5" class="wide-value">{{ consultant_name }}{% if consultant_designation %}, {{ consultant_designation }}{% endif %}</td>
         </tr>
         <tr>
-            <td class="label">Name of Investigations</td>
-            <td colspan="5" class="value">{{ investigation_type }}</td>
-        </tr>
-        <tr>
-            <td class="label">Clinical information:</td>
-            <td colspan="5" class="value">{{ clinical_information | default('') }}</td>
+            <td class="label">Investigation</td>
+            <td colspan="2" class="wide-value">{{ investigation_type }}</td>
+            <td class="label">Clinical Info</td>
+            <td colspan="2" class="wide-value">{{ clinical_information | default('-') }}</td>
         </tr>
     </table>
 
@@ -244,7 +234,7 @@
     </div>
 
     {% if special_stains %}
-    <div class="report-section" style="margin-top: 15px;">
+    <div class="report-section" style="margin-top: 8px;">
         <p class="section-title">Special Stains:</p>
         <p class="section-content">{{ special_stains }}</p>
     </div>
@@ -277,7 +267,7 @@
             {% if signature_image_url %}
             <img src="{{ signature_image_url }}" alt="Signature" class="signature-image">
             {% else %}
-            <div style="height: 60px;"></div>
+            <div style="height: 50px;"></div>
             {% endif %}
             <p class="signature-line">{{ doctor_name }}</p>
             <p class="signature-designation">{{ doctor_designation }}</p>
