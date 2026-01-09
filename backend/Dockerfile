@@ -7,8 +7,10 @@ RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
     curl \
-    # xhtml2pdf dependencies (minimal)
+    # xhtml2pdf/pycairo dependencies
     libffi-dev \
+    pkg-config \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for caching
