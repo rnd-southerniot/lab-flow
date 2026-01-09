@@ -87,19 +87,7 @@ async def startup_event():
     init_db()
     logger.info("All databases initialized successfully!")
 
-    # Initialize sample data in users database
-    db = SessionLocalUsers()
-    db_implement = SessionLocalUsersImplementation()
-    try:
-        from init_data import init_admin_user
-        init_admin_user(db)
-        # For implementation users
-        init_admin_user(db_implement, UserImplementation)
-    finally:
-        db.close()
-        db_implement.close()
-
-    # Initialize Histo-Cyto admin user
+    # Initialize Histo-Cyto admin user FIRST (before other initializations)
     if HISTO_CYTO_ENABLED:
         from core.database import SessionLocalHistoUsers
         from core.security import get_password_hash
@@ -127,6 +115,25 @@ async def startup_event():
             db_histo.rollback()
         finally:
             db_histo.close()
+
+    # Skip regular user initialization if databases point to histo_users (shared DB scenario)
+    from core.config import settings
+    is_shared_db = settings.DATABASE_URL_USERS and "histo_users" in settings.DATABASE_URL_USERS
+
+    if not is_shared_db:
+        # Initialize sample data in users database (only for non-histo deployments)
+        db = SessionLocalUsers()
+        db_implement = SessionLocalUsersImplementation()
+        try:
+            from init_data import init_admin_user
+            init_admin_user(db)
+            # For implementation users
+            init_admin_user(db_implement, UserImplementation)
+        finally:
+            db.close()
+            db_implement.close()
+    else:
+        logger.info("Skipping regular user init (shared database with Histo-Cyto)")
 
 @app.get("/")
 async def root():
