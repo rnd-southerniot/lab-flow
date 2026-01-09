@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { VoiceInputButton } from "@/components/voice/VoiceInputButton";
 
 export default function EditReportPage() {
   const { token } = useAuth();
@@ -151,7 +152,17 @@ export default function EditReportPage() {
 
             {/* Specimen */}
             <div className="space-y-2">
-              <Label htmlFor="specimen">Specimen *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="specimen">Specimen *</Label>
+                <VoiceInputButton
+                  fieldType="specimen"
+                  fieldName="Specimen"
+                  currentValue={formData.specimen}
+                  onTranscriptionComplete={(text) =>
+                    setFormData((prev) => ({ ...prev, specimen: text }))
+                  }
+                />
+              </div>
               <Textarea
                 id="specimen"
                 name="specimen"
@@ -165,7 +176,17 @@ export default function EditReportPage() {
 
             {/* Gross Examination */}
             <div className="space-y-2">
-              <Label htmlFor="gross_examination">Gross Examination</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="gross_examination">Gross Examination</Label>
+                <VoiceInputButton
+                  fieldType="gross_examination"
+                  fieldName="Gross Examination"
+                  currentValue={formData.gross_examination}
+                  onTranscriptionComplete={(text) =>
+                    setFormData((prev) => ({ ...prev, gross_examination: text }))
+                  }
+                />
+              </div>
               <Textarea
                 id="gross_examination"
                 name="gross_examination"
@@ -178,7 +199,17 @@ export default function EditReportPage() {
 
             {/* Microscopic Examination */}
             <div className="space-y-2">
-              <Label htmlFor="microscopic_examination">Microscopic Examination</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="microscopic_examination">Microscopic Examination</Label>
+                <VoiceInputButton
+                  fieldType="microscopic_examination"
+                  fieldName="Microscopic Examination"
+                  currentValue={formData.microscopic_examination}
+                  onTranscriptionComplete={(text) =>
+                    setFormData((prev) => ({ ...prev, microscopic_examination: text }))
+                  }
+                />
+              </div>
               <Textarea
                 id="microscopic_examination"
                 name="microscopic_examination"
@@ -191,7 +222,17 @@ export default function EditReportPage() {
 
             {/* Diagnosis */}
             <div className="space-y-2">
-              <Label htmlFor="diagnosis">Diagnosis *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="diagnosis">Diagnosis *</Label>
+                <VoiceInputButton
+                  fieldType="diagnosis"
+                  fieldName="Diagnosis"
+                  currentValue={formData.diagnosis}
+                  onTranscriptionComplete={(text) =>
+                    setFormData((prev) => ({ ...prev, diagnosis: text }))
+                  }
+                />
+              </div>
               <Textarea
                 id="diagnosis"
                 name="diagnosis"
@@ -221,7 +262,17 @@ export default function EditReportPage() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="special_stains">Special Stains</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="special_stains">Special Stains</Label>
+                    <VoiceInputButton
+                      fieldType="special_stains"
+                      fieldName="Special Stains"
+                      currentValue={formData.special_stains}
+                      onTranscriptionComplete={(text) =>
+                        setFormData((prev) => ({ ...prev, special_stains: text }))
+                      }
+                    />
+                  </div>
                   <Textarea
                     id="special_stains"
                     name="special_stains"
@@ -233,7 +284,17 @@ export default function EditReportPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="immunohistochemistry">Immunohistochemistry</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="immunohistochemistry">Immunohistochemistry</Label>
+                    <VoiceInputButton
+                      fieldType="immunohistochemistry"
+                      fieldName="Immunohistochemistry"
+                      currentValue={formData.immunohistochemistry}
+                      onTranscriptionComplete={(text) =>
+                        setFormData((prev) => ({ ...prev, immunohistochemistry: text }))
+                      }
+                    />
+                  </div>
                   <Textarea
                     id="immunohistochemistry"
                     name="immunohistochemistry"
@@ -245,7 +306,17 @@ export default function EditReportPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="comments">Comments</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="comments">Comments</Label>
+                    <VoiceInputButton
+                      fieldType="comments"
+                      fieldName="Comments"
+                      currentValue={formData.comments}
+                      onTranscriptionComplete={(text) =>
+                        setFormData((prev) => ({ ...prev, comments: text }))
+                      }
+                    />
+                  </div>
                   <Textarea
                     id="comments"
                     name="comments"

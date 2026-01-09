@@ -296,6 +296,82 @@ export const pdfService = {
 };
 
 /**
+ * Voice Transcription Service
+ */
+export const voiceService = {
+  transcribe: async (
+    audioBlob: Blob,
+    fieldType: string,
+    token: string,
+    options: { enhance?: boolean; existingText?: string } = {}
+  ): Promise<{
+    raw_transcription: string;
+    enhanced_text: string | null;
+    field_type: string;
+    was_enhanced: boolean;
+  }> => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+    formData.append("field_type", fieldType);
+    formData.append("enhance", String(options.enhance ?? true));
+    if (options.existingText) {
+      formData.append("existing_text", options.existingText);
+    }
+
+    const url = `${getBasePath()}/reports/voice/transcribe`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Transcription failed: ${response.status}`
+      );
+    }
+
+    return response.json();
+  },
+
+  enhanceText: async (
+    text: string,
+    fieldType: string,
+    token: string,
+    context?: string
+  ): Promise<{
+    original_text: string;
+    enhanced_text: string;
+    field_type: string;
+    corrections_made: string[];
+  }> => {
+    return apiRequest(
+      "/reports/voice/enhance-text",
+      "POST",
+      {
+        text,
+        field_type: fieldType,
+        context,
+      },
+      token
+    );
+  },
+
+  getStatus: async (
+    token: string
+  ): Promise<{
+    available: boolean;
+    whisper_model: string | null;
+    enhancement_model: string | null;
+  }> => {
+    return apiRequest("/reports/voice/status", "GET", null, token);
+  },
+};
+
+/**
  * Unified API export
  */
 export const api = {
@@ -304,4 +380,5 @@ export const api = {
   patients: patientsService,
   reports: reportsService,
   pdf: pdfService,
+  voice: voiceService,
 };

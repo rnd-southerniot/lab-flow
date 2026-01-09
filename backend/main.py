@@ -34,7 +34,7 @@ try:
     from modules.histo_users.models.user import HistoUser
     from modules.patients import patients_router
     from modules.patients.models.patient import Patient, ReferringDoctor
-    from modules.reports import reports_router
+    from modules.reports import reports_router, voice_router
     from modules.reports.models.report import Report, ReportVersion, AIChatHistory
     from modules.pdf_generator import pdf_router
     HISTO_CYTO_ENABLED = True
@@ -166,6 +166,8 @@ if HISTO_CYTO_ENABLED:
         app.include_router(patients_router, prefix=f"{settings.API_V1_STR}/patients", tags=["patients"])
     if reports_router:
         app.include_router(reports_router, prefix=f"{settings.API_V1_STR}/reports", tags=["reports"])
+    if voice_router:
+        app.include_router(voice_router, prefix=f"{settings.API_V1_STR}/reports/voice", tags=["voice"])
     if pdf_router:
         app.include_router(pdf_router, prefix=f"{settings.API_V1_STR}/pdf", tags=["pdf"])
     logger.info("Histo-Cyto modules registered successfully")

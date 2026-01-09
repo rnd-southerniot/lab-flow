@@ -8,15 +8,15 @@ async function proxyRequest(request: NextRequest, path: string) {
   const queryString = searchParams ? `?${searchParams}` : "";
   const url = `${BACKEND_URL}/api/v1/${path}${queryString}`;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
 
   // Forward authorization header
   const authHeader = request.headers.get("authorization");
   if (authHeader) {
     headers["Authorization"] = authHeader;
   }
+
+  const contentType = request.headers.get("content-type") || "";
 
   const fetchOptions: RequestInit = {
     method: request.method,
@@ -26,14 +26,24 @@ async function proxyRequest(request: NextRequest, path: string) {
 
   // Forward body for POST/PUT/PATCH requests
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
-    try {
-      const body = await request.text();
-      if (body) {
-        fetchOptions.body = body;
+    if (contentType.includes("multipart/form-data")) {
+      // For multipart/form-data (audio uploads), pass through as-is
+      fetchOptions.body = await request.arrayBuffer();
+      headers["Content-Type"] = contentType;
+    } else {
+      // For JSON requests
+      headers["Content-Type"] = "application/json";
+      try {
+        const body = await request.text();
+        if (body) {
+          fetchOptions.body = body;
+        }
+      } catch {
+        // No body
       }
-    } catch {
-      // No body
     }
+  } else {
+    headers["Content-Type"] = "application/json";
   }
 
   try {
